@@ -1,0 +1,136 @@
+/* Istari Companion: sidenotes for any theme.
+   Colors come from Obsidian's own variables, so the notes follow whichever
+   theme is active. The Istari theme restyles them to match its palette. */
+
+body {
+  --istari-sn-width: 14rem;
+  --istari-sn-gap: 2.2rem;
+}
+
+/* Reference marks */
+sup.istari-sidenote-ref,
+sup.istari-sidenote-ref a {
+  font-size: 0.74em;
+  font-style: normal;
+  font-variant: normal;
+  letter-spacing: 0;
+  text-transform: none;
+  text-decoration: none;
+  color: var(--text-accent);
+  line-height: 0;
+}
+sup.istari-sidenote-ref { padding-left: 0.08em; cursor: pointer; }
+.istari-sn-anchor { white-space: normal; }
+
+/* Live Preview: keep a reference mark on the same line as the word before
+   it by taking CodeMirror's buffer image out of the line, where it would
+   otherwise create a break point. (Obsidian forces its display, not its
+   position.) */
+.markdown-source-view .cm-line .istari-sn-glue + img.cm-widgetBuffer { position: absolute; }
+
+/* The note itself, reset so it never inherits the surrounding emphasis */
+.istari-sidenote {
+  display: none;
+  font-family: var(--font-text);
+  font-size: calc(var(--font-text-size) * 0.8);
+  line-height: 1.45;
+  font-style: normal;
+  font-weight: var(--font-normal);
+  font-variant: normal;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  color: var(--text-muted);
+}
+.istari-sidenote-number {
+  font-size: 0.85em;
+  color: var(--text-accent);
+  margin-right: 0.4em;
+  vertical-align: 0.25em;
+}
+.istari-sidenote-body p { margin: 0.3em 0 0; }
+.istari-sidenote-body p:first-child { display: inline; }
+
+/* Queries: notes that begin with "? " */
+.istari-sidenote.is-query .istari-sidenote-body::before {
+  content: "Query. ";
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+  color: var(--color-green);
+}
+.istari-sidenote.is-query .istari-sidenote-number { color: var(--color-green); }
+
+/* In place: opened under its line by the reference mark */
+.istari-sidenote.is-open {
+  display: block;
+  margin: 0.35em 0 0.6em 1.2em;
+  padding-left: 0.8em;
+  border-left: 1px solid var(--text-accent);
+}
+.istari-sidenote.is-open.is-query { border-left-color: var(--color-green); }
+
+/* Margin: only in a pane wide enough for a column of notes. The plugin sets
+   .istari-sn-wide on a pane 980 px wide or more, and .istari-has-sidenotes on
+   a pane whose note has footnotes. The text keeps its width; the column is
+   added to its right. */
+.istari-sn-wide.istari-has-sidenotes .markdown-preview-sizer,
+.istari-sn-wide.istari-has-sidenotes .markdown-source-view.mod-cm6.is-live-preview .cm-sizer {
+  box-sizing: border-box;
+  padding-right: calc(var(--istari-sn-width) + var(--istari-sn-gap));
+}
+.istari-sn-wide.istari-has-sidenotes .markdown-preview-view.is-readable-line-width .markdown-preview-sizer,
+.istari-sn-wide.istari-has-sidenotes .markdown-source-view.mod-cm6.is-live-preview.is-readable-line-width .cm-sizer {
+  max-width: calc(var(--file-line-width) + var(--istari-sn-width) + var(--istari-sn-gap));
+}
+
+/* Nothing between a note and the margin may clip it */
+.istari-sn-wide.istari-has-sidenotes :is(.callout, .callout-content) { overflow: visible; }
+.istari-sn-wide.istari-has-sidenotes .markdown-source-view.mod-cm6 .cm-content > .cm-embed-block.cm-callout[contenteditable=false],
+.istari-sn-wide.istari-has-sidenotes .markdown-source-view.mod-cm6 .cm-content > .cm-embed-block.cm-callout[contenteditable=false]:hover {
+  /* Obsidian declares contain: paint !important on every block widget,
+     so only another !important can release it. */
+  contain: none !important;
+  overflow: visible;
+}
+
+.istari-sn-wide .istari-sidenote,
+.istari-sn-wide .istari-sidenote.is-open {
+  display: block;
+  float: right;
+  clear: right;
+  position: relative;
+  width: var(--istari-sn-width);
+  margin: 0.25em calc(-1 * (var(--istari-sn-width) + var(--istari-sn-gap))) 0.9em 0;
+  padding: 0;
+  border: none;
+}
+.istari-sn-wide .callout .istari-sidenote,
+.istari-sn-wide .callout .istari-sidenote.is-open {
+  margin-right: calc(-1 * (var(--istari-sn-width) + var(--istari-sn-gap) + var(--font-text-size) * 1.1));
+}
+.istari-sn-wide .istari-sidenote.is-flash { animation: istari-sn-flash 1.2s ease-out; }
+.istari-sn-wide .markdown-source-view .istari-sidenote { cursor: text; }
+
+/* Where there is no margin (embeds, hover previews, tables), stay in place */
+.istari-sn-wide :is(.markdown-embed, .popover, table) .istari-sidenote { display: none; float: none; width: auto; margin: 0; }
+.istari-sn-wide :is(.markdown-embed, .popover, table) .istari-sidenote.is-open {
+  display: block;
+  margin: 0.35em 0 0.6em 1.2em;
+  padding-left: 0.8em;
+  border-left: 1px solid var(--text-accent);
+}
+@keyframes istari-sn-flash {
+  from { color: var(--text-normal); }
+  to   { color: var(--text-muted); }
+}
+
+/* On screen the footnote list repeats the notes, so it is hidden */
+body.istari-companion .istari-has-sidenotes .markdown-preview-view section.footnotes,
+body.istari-companion section.footnotes.istari-converted { display: none; }
+
+/* PDF export prints ordinary footnotes at the end */
+body .print .istari-sidenote,
+body .print .istari-sidenote.is-open { display: none; }
+body .print section.footnotes,
+body.istari-companion .print section.footnotes.istari-converted { display: block; }
+body .print .markdown-preview-view .markdown-preview-sizer { padding-right: 0; max-width: none; }
