@@ -1,9 +1,9 @@
 {
   "id": "istari-companion",
   "name": "Istari Companion",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "minAppVersion": "1.8.0",
-  "description": "Margin sidenotes from footnotes in Reading view and Live Preview, THEOREM-style callout shorthand, and clean titles for untitled callouts.",
+  "description": "Margin sidenotes from footnotes, a glossary built from bold terms with definitions on hover, THEOREM-style callout shorthand, and clean titles for untitled callouts.",
   "author": "The Scholium",
   "authorUrl": "https://github.com/TheScholium",
   "isDesktopOnly": false

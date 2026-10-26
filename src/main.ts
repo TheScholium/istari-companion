@@ -16,6 +16,11 @@
  * 3. Untitled callouts. Obsidian fills an untitled callout's title with its
  *    type name, which CSS cannot tell apart from a typed title. Callouts whose
  *    title equals their type are marked data-istari-untitled.
+ *
+ * 4. Glossary. Bold text followed by a colon defines a term. Each note shows
+ *    its own terms at the top of the margin; a note named Glossary collects
+ *    every term in the vault, alphabetized; bold text that names a term shows
+ *    its definition on hover. See glossary.ts and glossary-view.ts.
  */
 import {
   Component,
@@ -40,6 +45,7 @@ import {
   WidgetType,
   keymap,
 } from "@codemirror/view";
+import { Glossary } from "./glossary-view";
 
 const WIDE_PX = 980;
 
@@ -417,6 +423,7 @@ export default class IstariCompanion extends Plugin {
   private measured = new WeakSet<HTMLElement>();
   private observer: MutationObserver | null = null;
   private resizer: ResizeObserver | null = null;
+  private glossary: Glossary = new Glossary(this, (file) => this.refreshAllLeaves(file));
 
   onload(): void {
     document.body.addClass("istari-companion");
@@ -424,7 +431,10 @@ export default class IstariCompanion extends Plugin {
     this.registerMarkdownPostProcessor((el, ctx) => {
       scanCallouts(el);
       this.renderSidenotes(el, ctx);
+      this.glossary.markRendered(el);
+      this.glossary.ensureSoon();
     });
+    this.glossary.load();
     this.registerEditorExtension(sidenoteEditorExtension(this));
     this.registerEditorExtension(calloutShorthand());
 
@@ -480,11 +490,15 @@ export default class IstariCompanion extends Plugin {
 
     this.registerEvent(this.app.workspace.on("layout-change", () => this.refreshAllLeaves()));
     this.registerEvent(this.app.workspace.on("file-open", () => this.refreshAllLeaves()));
-    this.registerEvent(this.app.metadataCache.on("changed", (file) => this.refreshAllLeaves(file)));
+    this.registerEvent(this.app.metadataCache.on("changed", (file, data) => {
+      this.glossary.onChanged(file, data);
+      this.refreshAllLeaves(file);
+    }));
   }
 
   onunload(): void {
     document.body.removeClass("istari-companion");
+    this.glossary.unload();
     this.observer?.disconnect();
     this.resizer?.disconnect();
     document.querySelectorAll(`[${UNTITLED}]`).forEach((c) => c.removeAttribute(UNTITLED));
@@ -492,8 +506,9 @@ export default class IstariCompanion extends Plugin {
       v.removeClasses(["istari-has-sidenotes", "istari-sn-wide"]));
   }
 
-  // Mark each Markdown pane: does its note have footnotes (so the margin is
-  // reserved before any section renders), and is the pane wide enough?
+  // Mark each Markdown pane: does its note need the margin (footnotes, or
+  // terms for its glossary block), decided from the file so the column does
+  // not jump as sections render? And is the pane wide enough?
   private refreshAllLeaves(onlyFile?: TFile): void {
     this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
       const view = leaf.view;
@@ -504,9 +519,11 @@ export default class IstariCompanion extends Plugin {
         this.measured.add(pane);
         this.resizer?.observe(pane);
       }
+      this.glossary.updateBlocks(view);
       if (onlyFile && file.path !== onlyFile.path) return;
       void this.app.vault.cachedRead(file).then((text) => {
-        pane.toggleClass("istari-has-sidenotes", scanFootnotes(text).length > 0);
+        const terms = this.glossary.entriesFor(file.path).length > 0;
+        pane.toggleClass("istari-has-sidenotes", terms || scanFootnotes(text).length > 0);
       });
     });
   }
