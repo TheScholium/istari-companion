@@ -108,6 +108,14 @@ sup.istari-sidenote-ref { padding-left: 0.08em; cursor: pointer; }
 .istari-sn-wide .callout .istari-sidenote.is-open {
   margin-right: calc(-1 * (var(--istari-sn-width) + var(--istari-sn-gap) + var(--font-text-size) * 1.1));
 }
+/* A float may not sit higher than any float before it in the source, and
+   Obsidian draws list bullets as left floats. Once a margin note is pushed
+   down by the one above it, every bullet after it would follow it down.
+   Bullets placed absolutely sit where they did and are free of that rule. */
+.istari-sn-wide.istari-has-sidenotes .markdown-rendered .list-bullet {
+  float: none;
+  position: absolute;
+}
 .istari-sn-wide .istari-sidenote.is-flash { animation: istari-sn-flash 1.2s ease-out; }
 .istari-sn-wide .markdown-source-view .istari-sidenote { cursor: text; }
 
@@ -128,9 +136,136 @@ sup.istari-sidenote-ref { padding-left: 0.08em; cursor: pointer; }
 body.istari-companion .istari-has-sidenotes .markdown-preview-view section.footnotes,
 body.istari-companion section.footnotes.istari-converted { display: none; }
 
+/* ---------- Glossary ----------
+   The note's own terms, in a block at the top of the note. In a wide pane it
+   is the first thing in the margin column, above any sidenote; otherwise it
+   is a folded line above the text that opens when clicked. */
+.istari-glossary {
+  display: none;
+  margin: 0 0 1.2em;
+  font-family: var(--font-text);
+  font-size: calc(var(--font-text-size) * 0.8);
+  line-height: 1.45;
+  font-style: normal;
+  font-weight: var(--font-normal);
+  font-variant: normal;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  color: var(--text-muted);
+  user-select: text;
+}
+.markdown-preview-view .istari-glossary,
+.markdown-source-view.is-live-preview .istari-glossary { display: block; }
+
+.istari-glossary-head {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45em;
+  cursor: pointer;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  color: var(--text-accent);
+}
+.istari-glossary-head::before { content: "\25B8"; font-size: 0.8em; transition: transform 120ms ease; }
+.istari-glossary.is-open .istari-glossary-head::before { transform: rotate(90deg); }
+.istari-glossary-count { font-variant-numeric: lining-nums; font-size: 0.85em; color: var(--text-faint); }
+.istari-glossary-list {
+  display: none;
+  margin: 0.4em 0 0 0.3em;
+  padding-left: 0.8em;
+  border-left: 1px solid var(--text-accent);
+}
+.istari-glossary.is-open .istari-glossary-list { display: block; }
+.istari-glossary-entry { margin: 0 0 0.45em; }
+.istari-glossary-entry:last-child { margin-bottom: 0; }
+.istari-glossary-term {
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  color: var(--text-normal);
+  cursor: pointer;
+}
+.istari-glossary-term::after { content: "."; margin-right: 0.35em; color: var(--text-faint); }
+.istari-glossary-term:hover { color: var(--text-accent); }
+.istari-glossary-def p { display: inline; margin: 0; }
+
+/* Live Preview holds the block in a widget, and Obsidian clips every widget
+   (contain: paint !important), which would also wall the float in. */
+.istari-sn-wide.istari-has-sidenotes .markdown-source-view.mod-cm6 .cm-content > .istari-glossary-host[contenteditable=false] {
+  contain: none !important;
+}
+
+/* Wide pane: the first entry in the margin column */
+.istari-sn-wide.istari-has-sidenotes .istari-glossary {
+  float: right;
+  clear: right;
+  position: relative;
+  z-index: 1;
+  width: var(--istari-sn-width);
+  max-width: none;
+  margin: 0.25em calc(-1 * (var(--istari-sn-width) + var(--istari-sn-gap))) 1.2em 0;
+}
+.istari-sn-wide.istari-has-sidenotes .istari-glossary-head { padding-bottom: 0.3em; margin-bottom: 0.5em; border-bottom: 1px solid var(--background-modifier-border); display: flex; }
+.istari-sn-wide.istari-has-sidenotes .istari-glossary-head::before { content: none; }
+.istari-sn-wide.istari-has-sidenotes .istari-glossary-list { display: block; margin: 0; padding: 0; border: none; }
+
+/* Bold text that names a term: a faint dotted rule says a definition waits */
+.istari-gloss-term {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: color-mix(in srgb, var(--text-accent) 55%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  cursor: help;
+}
+
+/* The hover card */
+.istari-glossary-card {
+  position: fixed;
+  z-index: var(--layer-popover);
+  width: max-content;
+  max-width: min(22rem, calc(100vw - 16px));
+  padding: 0.65em 0.9em 0.7em;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: var(--shadow-s);
+  font-family: var(--font-text);
+  font-size: calc(var(--font-text-size) * 0.85);
+  line-height: 1.45;
+  color: var(--text-normal);
+  text-align: left;
+}
+.istari-glossary-card-term {
+  margin-bottom: 0.3em;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  color: var(--text-accent);
+  cursor: pointer;
+}
+.istari-glossary-card-term:hover { text-decoration: underline; }
+.istari-glossary-card-body p { margin: 0; }
+.istari-glossary-card-def + .istari-glossary-card-def {
+  margin-top: 0.55em;
+  padding-top: 0.55em;
+  border-top: 1px solid var(--background-modifier-border);
+}
+.istari-glossary-card-source {
+  margin-top: 0.25em;
+  font-size: 0.85em;
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+.istari-glossary-card-source::before { content: "\2014\2009"; }
+.istari-glossary-card-source:hover { color: var(--text-accent); }
+
 /* PDF export prints ordinary footnotes at the end */
 body .print .istari-sidenote,
 body .print .istari-sidenote.is-open { display: none; }
 body .print section.footnotes,
 body.istari-companion .print section.footnotes.istari-converted { display: block; }
 body .print .markdown-preview-view .markdown-preview-sizer { padding-right: 0; max-width: none; }
+body .print .istari-glossary { display: none; }
+body .print .istari-gloss-term { text-decoration: none; }
